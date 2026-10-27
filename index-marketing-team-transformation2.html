@@ -1,0 +1,980 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Market Research Transformation</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one-screen app, same blueprint grammar as the marketing transformation. A slim command bar (state, layer focus, KPIs, spend mix)
+   above a canvas that scales the blueprint to the viewport: organisation | workflows | technology, connectors left to right.
+   Single white theme in the C5i logo colours, chosen deliberately for client material. */
+:root {
+  --bg: #FFFFFF; --fg: #1F004C; --accent: #6800E0; --muted: #5A5170; --soft: #DCD6E8; --tint: #F6F2FD; --band: #FBFAFD; --risk: #C62828; --qual: #A47AF0;
+  --good: #1B7F4B; --good-bg: #E6F4EC; --warn: #9A5300; --warn-bg: #FDF1E1; --risk-bg: #FBE9E9;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; --mono: "IBM Plex Mono", ui-monospace, monospace; color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.4 var(--body); overflow: hidden;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 10px; }
+.app { height: 100%; display: flex; flex-direction: column; gap: 8px; }
+.view { flex: 1; min-height: 0; }
+#view-bp { display: grid; grid-template-rows: auto 1fr; gap: 8px; }
+.ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.seg.tabs { border-color: var(--accent); }
+.seg.tabs button[aria-pressed="true"] { background: var(--accent); }
+
+/* Simulator: inputs on the left, results on the right; stacks to one column when narrow */
+.sim { overflow: auto; display: grid; grid-template-columns: minmax(300px, 410px) minmax(0, 1fr); gap: 16px 24px; align-items: start; padding-bottom: 24px; }
+.inputs, .results { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.card { border: 1px solid var(--soft); border-radius: 12px; padding: 12px 14px; background: var(--bg); min-width: 0; }
+.card h3 { margin: 0 0 8px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 3px 0; font-size: 13px; }
+.row > span:first-child { flex: 1; min-width: 0; }
+.num { width: 78px; font: 500 13px var(--mono); color: var(--fg); border: 1px solid var(--soft); border-radius: 6px; padding: 4px 6px; text-align: right; background: var(--bg); }
+.txt, select { min-width: 0; font: 13px var(--body); color: var(--fg); border: 1px solid var(--soft); border-radius: 6px; padding: 4px 6px; background: var(--bg); }
+.txt { flex: 1; }
+.num:focus, .txt:focus, select:focus, input[type=range]:focus-visible, input[type=checkbox]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.unit { font-size: 11.5px; color: var(--muted); width: 58px; }
+.prog { display: grid; grid-template-columns: 74px 64px minmax(0, 1fr) 64px; gap: 8px; align-items: center; font-size: 13px; padding: 3px 0; }
+.prog.head { font-size: 11px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; font-weight: 600; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; margin: 0; }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 6px; vertical-align: -1px; }
+.btn { all: unset; cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 4px 12px; }
+.btn.solid { background: var(--fg); color: #fff; border-color: var(--fg); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.note { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
+.warnt { color: var(--warn); font-weight: 600; }
+.oc { border-top: 1px dashed var(--soft); padding: 8px 0; display: grid; gap: 6px; }
+.oc-head { display: flex; gap: 8px; align-items: center; }
+.oc-fields { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; font-size: 12px; color: var(--muted); padding-left: 23px; }
+.oc-fields .num { width: 64px; }
+.oc-fields .txt { flex: 0 0 64px; width: 64px; }
+.oc.off .oc-fields, .oc.off .txt { opacity: .5; }
+.x { all: unset; cursor: pointer; color: var(--muted); font-size: 12px; font-weight: 600; padding: 2px 6px; border-radius: 6px; }
+.x:hover, .x:focus-visible { color: var(--risk); outline: 1px solid var(--risk); }
+.subh { font-size: 12px; font-weight: 700; margin: 8px 0 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.tile { border: 1px solid var(--soft); border-radius: 12px; padding: 10px 12px; display: grid; gap: 2px; align-content: start; }
+.tile .v { font: 500 22px/1.2 var(--mono); color: var(--fg); font-variant-numeric: tabular-nums; }
+.tile .s { font-size: 12px; color: var(--muted); }
+.pillx { display: inline-block; font-size: 11.5px; font-weight: 600; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.pillx.good { background: var(--good-bg); color: var(--good); } .pillx.warn { background: var(--warn-bg); color: var(--warn); } .pillx.bad { background: var(--risk-bg); color: var(--risk); }
+.gb { display: grid; grid-template-columns: 120px minmax(0, 1fr) 64px; gap: 8px; align-items: center; font-size: 12.5px; padding: 3px 0; }
+.gb .track { height: 14px; background: var(--band); border: 1px solid var(--soft); border-radius: 3px; overflow: hidden; }
+.gb .fill { height: 100%; }
+.gb b { font: 500 12.5px var(--mono); text-align: right; }
+.scroll { overflow-x: auto; }
+table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th { text-align: left; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 6px 8px; border-bottom: 1.5px solid var(--fg); white-space: nowrap; }
+.tbl td { padding: 6px 8px; border-bottom: 1px solid var(--soft); }
+.tbl .n { text-align: right; font-family: var(--mono); font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbl tr.tot td { font-weight: 700; border-top: 1.5px solid var(--fg); border-bottom: none; }
+.chart { width: 100%; max-width: 720px; height: auto; display: block; }
+.chart text { font-family: var(--mono); font-size: 11px; fill: var(--muted); }
+.chart .grid { stroke: var(--soft); stroke-width: 1; }
+.chart .zero { stroke: var(--muted); stroke-width: 1.2; }
+.chart .ln { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+.chart .area { fill: var(--tint); }
+.chart .pb { fill: var(--accent); stroke: var(--bg); stroke-width: 2; }
+.chart .pbt { fill: var(--accent); font-weight: 600; }
+@media (max-width: 1000px) { .sim { grid-template-columns: minmax(0, 1fr); } }
+.cmd { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.cmd h1 { font-size: 16px; margin: 0; white-space: nowrap; }
+.cmd h1 span { color: var(--accent); }
+.seg { display: inline-flex; border: 1.5px solid var(--fg); border-radius: 999px; padding: 2px; gap: 2px; }
+.seg button { all: unset; cursor: pointer; font-weight: 600; font-size: 13px; padding: 5px 13px; border-radius: 999px; color: var(--fg); }
+.seg button[aria-pressed="true"] { background: var(--fg); color: #fff; }
+.seg.layers { border-color: var(--soft); }
+.seg.layers button[aria-pressed="true"] { background: var(--accent); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.lab { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.kpis { display: flex; flex-wrap: wrap; gap: 6px; }
+.k { border: 1px solid var(--soft); border-radius: 8px; padding: 2px 9px; display: flex; gap: 6px; align-items: baseline; }
+.k b { font-family: var(--mono); font-weight: 500; color: var(--accent); font-size: 14px; font-variant-numeric: tabular-nums; }
+.k span { font-size: 11.5px; color: var(--muted); }
+.kpis[hidden], .spend[hidden] { display: none; }
+.spend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.sp-track { display: flex; width: 240px; height: 12px; border-radius: 3px; overflow: hidden; background: var(--band); }
+.sp-track i { display: block; height: 100%; }
+.sp-track i + i { border-left: 1px solid var(--bg); }
+.sp-track i.rel { background: repeating-linear-gradient(135deg, transparent 0 4px, var(--soft) 4px 6px); border: 1px dashed var(--accent); }
+.sp-leg { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11.5px; color: var(--muted); }
+.sp-leg em { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+.sp-leg em.rel { border: 1px dashed var(--accent); background: transparent; }
+.sp-leg b { font-family: var(--mono); font-weight: 500; color: var(--fg); }
+.stage { position: relative; min-height: 0; }
+.stage svg { width: 100%; height: 100%; display: block; }
+.panel { position: absolute; left: 12px; bottom: 12px; width: min(360px, 60%); max-height: 40%; background: #fff; border: 1.5px solid var(--accent); border-radius: 12px;
+  padding: 10px 14px; box-shadow: 0 6px 24px rgba(31,0,76,.12); font-size: 12.5px; pointer-events: none; overflow: auto; }
+.panel h2 { font-size: 14px; margin: 0 0 4px; }
+.panel p { margin: 0 0 6px; color: var(--muted); }
+.panel ul { margin: 0; padding-left: 16px; }
+.panel li span { color: var(--muted); }
+.hint { font-size: 12px; color: var(--muted); }
+svg text { font-family: var(--body); fill: var(--fg); }
+.band { fill: var(--band); stroke: var(--soft); }
+.bandno { font-family: var(--mono); font-size: 15px; fill: var(--accent); }
+.bandt { font-size: 13px; font-weight: 700; letter-spacing: .14em; }
+.box { fill: #fff; stroke: var(--soft); stroke-width: 1.3; }
+.box.root { fill: var(--fg); stroke: var(--fg); }
+.w { fill: #fff !important; }
+.rs { font-size: 12px; fill: #E6DDF7 !important; }
+.box.ext { stroke-dasharray: 5 4; stroke: var(--muted); }
+.box.pod { stroke: var(--muted); }
+.box.spod { stroke: var(--fg); stroke-width: 1.8; }
+.box.aipod { fill: var(--tint); stroke: var(--accent); stroke-width: 1.8; }
+.box.agent { fill: var(--tint); stroke: var(--accent); }
+.hx { fill: var(--accent); }
+.at { font-size: 12px; font-weight: 600; fill: var(--accent) !important; }
+.bt { font-size: 14px; font-weight: 700; }
+.bs { font-size: 12px; fill: var(--muted) !important; }
+.bs.red { fill: var(--risk) !important; }
+.cnt { font-family: var(--mono); font-size: 19px; fill: var(--accent) !important; }
+.dp { fill: var(--muted); } .ds { fill: var(--fg); } .da { fill: var(--accent); }
+.tree { fill: none; stroke: var(--muted); stroke-width: 1.4; }
+.box.wfo { stroke: var(--muted); stroke-width: 1.4; }
+.box.wf { stroke: var(--accent); stroke-width: 2; }
+.box.wfs { stroke: var(--accent); stroke-dasharray: 6 4; stroke-width: 1.6; }
+.box.bar { fill: var(--tint); }
+.pill { fill: var(--tint); }
+.pt { font-size: 12px; font-weight: 600; fill: var(--accent) !important; }
+.wt { font-size: 15px; font-weight: 700; }
+.ws { font-size: 12.5px; }
+.wh { font-size: 12.5px; fill: var(--muted) !important; font-style: italic; }
+.wp { font-size: 12.5px; fill: var(--risk) !important; }
+.flow { fill: none; stroke: var(--accent); stroke-width: 2.4; }
+.flow.thin { stroke-width: 1.5; stroke-dasharray: 5 4; }
+.flow.red { stroke: var(--risk); }
+.flow.dash { stroke-dasharray: 7 5; }
+.fl { font-size: 12px; font-style: italic; fill: var(--muted) !important; }
+.fl.red { fill: var(--risk) !important; }
+.gate path { fill: #fff; stroke: var(--fg); stroke-width: 2; }
+.gt { font-size: 12px; font-weight: 600; }
+.loop circle { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.loop text { font-size: 11px; font-weight: 700; letter-spacing: .12em; fill: var(--accent) !important; }
+.rl { font-size: 11.5px; font-weight: 700; letter-spacing: .12em; fill: var(--muted) !important; }
+.rowline { stroke: var(--soft); stroke-dasharray: 2 4; }
+.box.chip.gov { stroke: var(--fg); }
+.box.chip.agent { fill: var(--tint); stroke: var(--accent); }
+.box.chip.model { fill: #FBF8FF; stroke: var(--accent); stroke-dasharray: 3 3; }
+.box.chip.data { fill: #F4F3F7; }
+.box.empty { fill: none; stroke: var(--risk); stroke-dasharray: 6 5; }
+.ct { font-size: 12.5px; }
+.box.cloud { fill: var(--fg); stroke: none; }
+.cl { font-size: 13px; font-weight: 600; fill: #fff !important; }
+.cx { fill: none; stroke: var(--accent); stroke-width: 1.1; opacity: .13; }
+.cx.inner { opacity: 0; }
+svg.focus .cx { opacity: .03; }
+svg.focus .cx.hot { opacity: 1; stroke-width: 2.2; }
+svg.focus .nd { opacity: .3; }
+svg.focus .nd.hot { opacity: 1; }
+svg.layer-org .colbg:not([data-layer="org"]), svg.layer-org .nd:not([data-layer="org"]),
+svg.layer-flow .colbg:not([data-layer="flow"]), svg.layer-flow .nd:not([data-layer="flow"]),
+svg.layer-tech .colbg:not([data-layer="tech"]), svg.layer-tech .nd:not([data-layer="tech"]) { opacity: .25; }
+.nd { cursor: pointer; transition: opacity .15s; }
+.nd.static { cursor: default; }
+.nd:focus-visible { outline: none; }
+.nd:focus-visible .box { stroke: var(--accent); stroke-width: 3; }
+@media (prefers-reduced-motion: reduce) { .nd { transition: none; } }
+@media (max-width: 820px) {
+  body { overflow: auto; }
+  .app { height: auto; }
+  .view { flex: none; }
+  .sim { overflow: visible; }
+  .stage { overflow-x: auto; }
+  .stage svg { min-width: 1100px; height: auto; }
+  .panel { position: static; width: auto; margin-top: 8px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="cmd">
+    <h1>Market research team <span>transformation</span></h1>
+    <div class="seg tabs" role="group" aria-label="View"><button type="button" data-t="bp" aria-pressed="true">Blueprint</button><button type="button" data-t="sim" aria-pressed="false">Simulator</button></div>
+    <div class="ctl" id="bp-ctl">
+      <div class="seg" role="group" aria-label="State"><button type="button" data-v="present" aria-pressed="true">Present</button><button type="button" data-v="transformed" aria-pressed="false">Transformed</button></div>
+      <span class="lab">Focus</span>
+      <div class="seg layers" role="group" aria-label="Layer focus"><button type="button" data-l="all" aria-pressed="true">All</button><button type="button" data-l="org" aria-pressed="false">Organisation</button><button type="button" data-l="flow" aria-pressed="false">Workflows</button><button type="button" data-l="tech" aria-pressed="false">Technology</button></div>
+      <span class="hint">Hover or tap any box to trace its connections · keys: ← → switch state, 1–4 focus</span>
+    </div>
+    <span class="hint" id="sim-hint" hidden>Change any input; results and both blueprint states update as you type.</span>
+  </div>
+  <div class="view" id="view-bp">
+    <div class="cmd">
+      <span class="lab">KPIs</span>
+      <div class="kpis" id="k-present"></div>
+      <div class="kpis" id="k-transformed" hidden></div>
+      <div class="spend" id="s-present"></div>
+      <div class="spend" id="s-transformed" hidden></div>
+      <span class="hint" id="bp-note"></span>
+    </div>
+    <div class="stage">
+      <svg id="bp" viewBox="0 0 1920 1040" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Operating model blueprint for the market research team: organisation, process workflows and technology, side by side"></svg>
+      <div class="panel" id="panel" aria-live="polite"><h2>Trace a connection</h2><p>Hover over or tap any team, agent, workflow or tool. Its links light up across all three layers and are listed here.</p></div>
+    </div>
+  </div>
+  <div class="view sim" id="view-sim" hidden>
+    <div class="inputs" id="inputs"></div>
+    <div class="results" id="results" aria-live="polite"></div>
+  </div>
+</div>
+<script>
+(function () {
+  /* ---------- Content: the two operating models ---------- */
+  var PRESENT = {
+    countX: 518,
+    root: { name: 'Head of Market Research', sub: '50 people · $100M research spend a year', desc: 'Leads a 50-person corporate research team; most studies are commissioned one at a time through agencies.' },
+    teams: [
+      { id: 'o_bp', name: 'Insights business partners', n: 8, sub: 'Briefs from brand, product and CX', desc: '8 people. Take requests from the business and turn them into study briefs.' },
+      { id: 'o_quant', name: 'Quantitative research', n: 12, sub: 'Brand tracking, CSAT/NPS, surveys · $50M', desc: '12 people. Manage $50M of agency-run trackers and survey studies.' },
+      { id: 'o_ux', name: 'UX research', n: 8, sub: 'Usability and journey studies · $25M', desc: '8 people. Run $25M of usability, journey and concept studies, mostly moderated.' },
+      { id: 'o_qual', name: 'Qualitative research', n: 7, sub: 'Diaries, mystery shops, interviews · $20M', desc: '7 people. Commission $20M of diary studies, mystery shopping and in-depth interviews.' },
+      { id: 'o_ops', name: 'Research operations', n: 5, sub: 'Vendors, panels, recruiting, consent', desc: '5 people. Run RFPs, panels and recruiting; check consent study by study.' },
+      { id: 'o_an', name: 'Analytics & data science', n: 5, sub: 'Weighting, cross-tabs, driver models', desc: '5 people. Rebuild tables and driver models for each study.' },
+      { id: 'o_km', name: 'Knowledge & reporting', n: 3, sub: 'Decks and the shared drive', desc: '3 people. File reports on a shared drive; past studies are hard to find.' },
+      { id: 'o_lead', name: 'Leadership', n: 2, sub: 'Research plan and budget', desc: '2 people. Set the research plan and budget once a year.' }
+    ],
+    teamCls: 'pod', dot: 'dp',
+    ext: { name: 'Agencies, panels & vendors · $95M a year', desc: 'Fieldwork, moderation and analysis bought study by study.' },
+    flow: {
+      type: 'seq',
+      steps: [
+        { id: 'w_brief', name: 'Intake & brief', pill: '2–3 weeks', lines: [['Insights business partners', 'ws'], ['Hand-off: email and brief docs', 'wh'], ['Past studies rarely checked first', 'wp']] },
+        { id: 'w_design', name: 'Design & vendor RFP', pill: '3–4 weeks', lines: [['Research leads + operations', 'ws'], ['Hand-off: RFP and questionnaire drafts', 'wh'], ['New RFP for most studies', 'wp']] },
+        { id: 'w_field', name: 'Fieldwork', pill: '4–8 weeks', lines: [['Agencies and panels', 'ws'], ['Hand-off: data files from vendors', 'wh'], ['Recruiting and quality checks by hand', 'wp']] },
+        { id: 'w_analyse', name: 'Analysis & report', pill: '3–4 weeks', lines: [['Agency + analytics team', 'ws'], ['Hand-off: long PDF decks', 'wh'], ['Tables and decks rebuilt every time', 'wp']] },
+        { id: 'w_share', name: 'Share & act', pill: 'per study', lines: [['Insights business partners', 'ws'], ['Hand-off: readout meetings', 'wh'], ['Findings stay in decks', 'wp']] }
+      ],
+      side: [
+        { id: 'w_mys', row: 2, name: 'Mystery shops & diaries', pill: '6–8 weeks', lines: [['Vendor-run programmes', 'ws'], ['Results arrive after the moment', 'wp']] },
+        { id: 'w_track', row: 3, name: 'Brand & CSAT trackers', pill: 'quarterly', lines: [['Quant team + agency', 'ws'], ['Readout weeks after each wave', 'wp']] }
+      ],
+      feedback: 'Findings rarely reach the next brief',
+      data: { id: 'w_data', name: 'Study data scattered across vendors', lines: [['Agency files, shared drives and decks; every study starts from zero', 'ws'], ['No shared research repository or consent record', 'wp']], desc: 'Each study is set up, analysed and stored separately, so nothing is reused.' },
+      dataNote: 'no reuse across studies'
+    },
+    tech: [
+      { label: 'HOW PEOPLE WORK', chips: [
+        { id: 't_email', name: 'Email & chat', desc: 'Briefs and hand-offs by email' },
+        { id: 't_decks', name: 'Slide decks', desc: 'Every readout is a new deck' },
+        { id: 't_xls', name: 'Excel', desc: 'Plans, budgets and tables in spreadsheets' }] },
+      { label: 'RESEARCH TOOLS', chips: [
+        { id: 't_survey', name: 'Survey platform', desc: 'Questionnaires programmed study by study' },
+        { id: 't_ux', name: 'UX testing tool', desc: 'Mostly moderated sessions' },
+        { id: 't_video', name: 'Video interview tool', desc: 'Recordings reviewed by hand' },
+        { id: 't_myst', name: 'Mystery shop vendor app', desc: 'Run by the vendor' },
+        { id: 't_xtab', name: 'Cross-tab software', desc: 'Tables rebuilt for each study' }] },
+      { label: 'REPORTING', chips: [
+        { id: 't_dash', name: 'Tracker dashboards', desc: 'Refreshed after each quarterly wave' },
+        { id: 't_pdf', name: 'PDF reports', desc: 'Long agency reports' }] },
+      { label: 'AI & AGENTS', empty: { id: 'none', name: 'No AI or agent layer', text: 'No AI layer: coding, tagging and synthesis are done by hand', desc: 'Open ends, transcripts and videos are coded by people or agencies.' } },
+      { label: 'DATA', chips: [
+        { id: 't_files', name: 'Agency data files', desc: 'Held by each vendor' },
+        { id: 't_drive', name: 'Shared drive', desc: 'Past reports, hard to search' },
+        { id: 't_panel', name: 'Panel provider data', desc: 'Bought per study' },
+        { id: 't_code', name: 'Manual open-end coding', desc: 'Slow and inconsistent between studies' }] },
+      { label: 'INFRASTRUCTURE', cloud: 'No AI governance · consent checked study by study · licences bought per team' }
+    ],
+    links: [
+      ['o_bp', 'w_brief'], ['o_bp', 'w_share'], ['o_lead', 'w_brief'], ['o_quant', 'w_design'], ['o_quant', 'w_track'], ['o_ux', 'w_design'], ['o_ux', 'w_field'],
+      ['o_qual', 'w_field'], ['o_qual', 'w_mys'], ['o_ops', 'w_design'], ['o_ops', 'w_field'], ['o_an', 'w_analyse'], ['o_an', 'w_track'], ['o_km', 'w_share'], ['o_km', 'w_data'],
+      ['ext', 'w_field'], ['ext', 'w_analyse'], ['ext', 'w_mys'], ['ext', 'w_track'],
+      ['w_brief', 't_email'], ['w_brief', 't_drive'], ['w_design', 't_survey'], ['w_design', 't_xls'], ['w_field', 't_survey'], ['w_field', 't_ux'], ['w_field', 't_video'],
+      ['w_field', 't_panel'], ['w_mys', 't_myst'], ['w_analyse', 't_xtab'], ['w_analyse', 't_xls'], ['w_analyse', 't_decks'], ['w_share', 't_decks'], ['w_share', 't_pdf'],
+      ['w_track', 't_dash'], ['w_track', 't_survey'], ['w_data', 't_files'], ['w_data', 't_drive'], ['w_data', 't_code'], ['w_analyse', 't_code']
+    ],
+    inner: []
+  };
+
+  var TRANSFORMED = {
+    countX: 302,
+    root: { name: 'Head of Consumer Intelligence', sub: '30 specialists · 6 AI roles · 8 agents', desc: 'Leads specialists and agents as one team; most business questions answered within days.' },
+    teams: [
+      { id: 'o_bp', name: 'Insight partners', n: 6, sub: 'Own decisions with the business', desc: '6 people. Work with brand, product and CX leaders on the decision behind each question.',
+        agents: [{ id: 'a_know', name: 'Knowledge & intake', desc: 'Answers from past research first and drafts the brief for new questions.' }, { id: 'a_story', name: 'Readout', desc: 'Drafts the readout and answers follow-up questions on the findings.' }] },
+      { id: 'o_quant', name: 'Quantitative science', n: 6, sub: 'Owns trackers and survey design', desc: '6 people. Set methods and approve every questionnaire; trackers run continuously.',
+        agents: [{ id: 'a_survey', name: 'Survey design', desc: 'Drafts questionnaires and checks programming and sample.' }, { id: 'a_track', name: 'Tracker', desc: 'Runs brand and CSAT/NPS tracking continuously and alerts on change.' }] },
+      { id: 'o_ux', name: 'UX research', n: 5, sub: 'Leads usability and journeys', desc: '5 people. Lead studies; the agent runs unmoderated tests and synthesises sessions.',
+        agents: [{ id: 'a_ux', name: 'UX synthesis', desc: 'Runs unmoderated tests, tags sessions and synthesises findings.' }] },
+      { id: 'o_qual', name: 'Qualitative research', n: 5, sub: 'Leads deep and sensitive work', desc: '5 people. Lead ethnography and sensitive topics; the agent runs AI-moderated interviews and diary prompts.',
+        agents: [{ id: 'a_qual', name: 'Qual interview', desc: 'Moderates AI-led interviews and diary prompts; codes transcripts.' }] },
+      { id: 'o_ops', name: 'Research operations', n: 3, sub: 'Owns vendors, panels, consent', desc: '3 people. Own the panel strategy, vendor contracts and consent policy.',
+        agents: [{ id: 'a_field', name: 'Field & quality', desc: 'Recruits, schedules mystery shops, checks consent and data quality.' }] },
+      { id: 'o_an', name: 'Insight science', n: 3, sub: 'Governs models and synthetic data', desc: '3 people. Validate models, driver analysis and any use of synthetic respondents.',
+        agents: [{ id: 'a_analysis', name: 'Analysis', desc: 'Codes open ends, builds tables and runs driver analysis.' }] },
+      { id: 'o_lead', name: 'Leadership & value office', n: 2, sub: 'Priorities, budget and ROI', desc: '2 people. Set priorities and track the value of research.' },
+      { id: 'o_ai', name: 'AI platform team', n: 6, sub: 'Builds, evaluates and runs agents', cls: 'aipod', dot: 'da', desc: '6 people. 2 AI engineers, 1 evaluation engineer, 1 research data engineer, 2 forward-deployed engineers.' }
+    ],
+    teamCls: 'spod', dot: 'ds',
+    ext: { name: 'Agencies & panels · specialist studies', desc: 'Kept for specialist fieldwork, panels and sensitive topics.' },
+    flow: {
+      type: 'loop',
+      boxes: [
+        { id: 'w_ask', col: 0, row: 0, name: 'Ask', pill: 'hours', lines: ['Knowledge agent answers from', 'past research first; only new', 'questions become studies'] },
+        { id: 'w_design', col: 0, row: 1, name: 'Design', pill: 'days', lines: ['Survey design agent drafts;', 'a researcher approves the', 'method and sample'] },
+        { id: 'w_field', col: 0, row: 2, name: 'Field', pill: '1–2 weeks', lines: ['Field & quality agent recruits,', 'runs AI-moderated interviews', 'and checks data quality'] },
+        { id: 'w_analyse', col: 1, row: 2, name: 'Analyse', pill: 'days', lines: ['Analysis agent codes open ends,', 'builds tables and drivers;', 'scientists validate'] },
+        { id: 'w_activate', col: 1, row: 1, name: 'Activate', pill: 'days', lines: ['Readout agent drafts the story;', 'partners take it to the', 'decision owner'] },
+        { id: 'w_learn', col: 1, row: 0, name: 'Learn', pill: 'always on', lines: ['Every study, transcript and', 'decision goes into the', 'knowledge base'] }
+      ],
+      gates: [[725, 246, 'Brief approved'], [725, 496, 'Method approved'], [1115, 497, 'Findings validated']],
+      labels: [[920, 611, 'Hand-off, logged', 'middle'], [920, 111, 'Reuse first', 'middle'], [1127, 250, 'Decisions logged', 'start']],
+      loop: ['ALWAYS-ON', 'INSIGHT LOOP'],
+      support: [
+        { id: 'w_track', col: 0, name: 'Always-on trackers', pill: 'continuous', line: 'Brand and CSAT/NPS, alerts on change' },
+        { id: 'w_spec', col: 1, name: 'Specialist studies', pill: 'with agencies', line: 'Ethnography, sensitive topics' }
+      ],
+      data: { id: 'w_data', name: 'Research knowledge base', line: 'Every study, transcript and dataset · consented, governed, searchable', desc: 'One governed source of research knowledge feeds every agent and workflow.' },
+      note: 'Every agent action is logged. Researchers approve briefs, methods and findings.'
+    },
+    tech: [
+      { label: 'INTERFACES', chips: [
+        { id: 't_chat', name: 'Insights assistant', desc: 'Ask questions of past research in Teams or Slack' },
+        { id: 't_inbox', name: 'Approval inbox', desc: 'Where researchers approve agent work' },
+        { id: 't_portal', name: 'Insight portal', desc: 'Readouts and findings for the business' },
+        { id: 't_value', name: 'Value dashboard', desc: 'Tracks reuse, speed and spend released' }] },
+      { label: 'ORCHESTRATION & GOVERNANCE', chips: [
+        { id: 't_orch', name: 'Agent5i orchestration', kind: 'gov', desc: 'Coordinates agent hand-offs across the loop' },
+        { id: 't_hitl', name: 'Human approval workflow', kind: 'gov', desc: 'Routes briefs, methods and findings to people' },
+        { id: 't_audit', name: 'Audit log', kind: 'gov', desc: 'Every agent action recorded' },
+        { id: 't_eval', name: 'Evaluation & monitoring', kind: 'gov', desc: 'Tests agents before and after release' },
+        { id: 't_consent', name: 'Consent & PII controls', kind: 'gov', desc: 'Respondent consent and privacy checked automatically' }] },
+      { label: 'AGENTS', chips: [
+        { id: 'i_know', name: 'Knowledge & intake', kind: 'agent' }, { id: 'i_survey', name: 'Survey design', kind: 'agent' },
+        { id: 'i_track', name: 'Tracker', kind: 'agent' }, { id: 'i_ux', name: 'UX synthesis', kind: 'agent' },
+        { id: 'i_qual', name: 'Qual interview', kind: 'agent' }, { id: 'i_field', name: 'Field & quality', kind: 'agent' },
+        { id: 'i_analysis', name: 'Analysis', kind: 'agent' }, { id: 'i_story', name: 'Readout', kind: 'agent' }] },
+      { label: 'MODELS & AI SERVICES', chips: [
+        { id: 'm_llm', name: 'LLMs (reasoning)', kind: 'model', desc: 'Briefs, questionnaires and narrative' },
+        { id: 'm_slm', name: 'Small models (coding & tagging)', kind: 'model', desc: 'Cheaper models for routine coding' },
+        { id: 'm_speech', name: 'Speech & video analysis', kind: 'model', desc: 'Transcribes and tags interviews and sessions' },
+        { id: 'm_synth', name: 'Synthetic panel (screening only)', kind: 'model', desc: 'Early screening of ideas; never used alone for a decision and validated against real samples' },
+        { id: 'm_drivers', name: 'Drivers & forecasting', kind: 'model', desc: 'Key driver and forecast models' },
+        { id: 'm_disc', name: 'Discovery causal & anomaly', kind: 'model', desc: 'Explains why tracker results changed' },
+        { id: 'm_inc', name: 'Incivus concept & creative scoring', kind: 'model', desc: 'Pre-scores concepts and creative before testing' }] },
+      { label: 'DATA & KNOWLEDGE', chips: [
+        { id: 'd_kg', name: 'Research knowledge graph', kind: 'data', desc: 'Every study, finding and decision, linked' },
+        { id: 'd_resp', name: 'Respondent & panel data', kind: 'data', desc: 'Owned panel with consent records' },
+        { id: 'd_trans', name: 'Transcript & video store', kind: 'data', desc: 'Searchable qual and UX recordings' },
+        { id: 'd_sem', name: 'Semantic layer', kind: 'data', desc: 'Shared definitions of every metric' },
+        { id: 'd_cdp', name: 'Customer data platform', kind: 'data', desc: 'Links research to customer behaviour' }] },
+      { label: 'SYSTEMS & SOURCES', chips: [
+        { id: 's_survey', name: 'Survey platform', desc: '' }, { id: 's_ux', name: 'UX testing platform', desc: '' },
+        { id: 's_panel', name: 'Panel providers', desc: '' }, { id: 's_crm', name: 'CRM & CX feedback', desc: '' },
+        { id: 's_social', name: 'Social & reviews', desc: '' }, { id: 's_myst', name: 'Mystery shop app', desc: '' }] },
+      { label: 'INFRASTRUCTURE', cloud: 'Runs on your cloud · Azure · AWS · GCP · privacy by design · FinOps cost monitoring' }
+    ],
+    links: [
+      ['o_bp', 'w_ask'], ['o_bp', 'w_activate'], ['o_quant', 'w_design'], ['o_quant', 'w_track'], ['o_ux', 'w_design'], ['o_ux', 'w_field'], ['o_qual', 'w_field'],
+      ['o_qual', 'w_spec'], ['o_ops', 'w_field'], ['o_ops', 'w_data'], ['o_an', 'w_analyse'], ['o_lead', 'w_learn'], ['ext', 'w_spec'], ['ext', 'w_field'],
+      ['o_ai', 't_orch'], ['o_ai', 't_eval'],
+      ['a_know', 'w_ask'], ['a_know', 'w_learn'], ['a_story', 'w_activate'], ['a_survey', 'w_design'], ['a_track', 'w_track'], ['a_ux', 'w_field'], ['a_ux', 'w_analyse'],
+      ['a_qual', 'w_field'], ['a_field', 'w_field'], ['a_analysis', 'w_analyse'],
+      ['w_ask', 'i_know'], ['w_learn', 'i_know'], ['w_design', 'i_survey'], ['w_track', 'i_track'], ['w_field', 'i_field'], ['w_field', 'i_qual'], ['w_field', 'i_ux'],
+      ['w_analyse', 'i_analysis'], ['w_analyse', 'i_ux'], ['w_activate', 'i_story'],
+      ['w_ask', 't_chat'], ['w_design', 't_hitl'], ['w_analyse', 't_hitl'], ['w_activate', 't_portal'], ['w_learn', 't_value'], ['w_field', 't_consent'], ['w_data', 'd_kg'], ['w_data', 't_consent']
+    ],
+    inner: [
+      ['a_know', 'i_know'], ['a_story', 'i_story'], ['a_survey', 'i_survey'], ['a_track', 'i_track'], ['a_ux', 'i_ux'], ['a_qual', 'i_qual'], ['a_field', 'i_field'], ['a_analysis', 'i_analysis'],
+      ['i_know', 'd_kg'], ['i_know', 'm_llm'], ['i_survey', 's_survey'], ['i_survey', 'm_llm'], ['i_track', 's_survey'], ['i_track', 'm_disc'], ['i_track', 's_crm'],
+      ['i_ux', 's_ux'], ['i_ux', 'm_speech'], ['i_qual', 'm_speech'], ['i_qual', 'd_trans'], ['i_field', 's_panel'], ['i_field', 's_myst'], ['i_field', 'd_resp'],
+      ['i_analysis', 'm_slm'], ['i_analysis', 'm_drivers'], ['i_analysis', 'm_synth'], ['i_story', 'm_llm'], ['i_story', 'm_inc'], ['i_story', 'd_sem'], ['i_track', 's_social']
+    ]
+  };
+
+  /* ---------- Drawing ---------- */
+  var FONT = '"IBM Plex Sans", "Segoe UI", system-ui, sans-serif';
+  var ctx = document.createElement('canvas').getContext('2d');
+  function tw(t, size, weight) { ctx.font = (weight || 400) + ' ' + size + 'px ' + FONT; return ctx.measureText(t).width; }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function r(n) { return Math.round(n * 10) / 10; }
+  function T(x, y, cls, t, anchor, extra) { return '<text class="' + cls + '" x="' + r(x) + '" y="' + r(y) + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + (extra || '') + '>' + esc(t) + '</text>'; }
+  function R(cls, x, y, w, h, rx) { return '<rect class="' + cls + '" x="' + r(x) + '" y="' + r(y) + '" width="' + r(w) + '" height="' + r(h) + '" rx="' + rx + '"/>'; }
+  function hex(cx, cy) { var p = [[0, -7], [6.1, -3.5], [6.1, 3.5], [0, 7], [-6.1, 3.5], [-6.1, -3.5]]; return '<polygon class="hx" points="' + p.map(function (d) { return r(cx + d[0]) + ',' + r(cy + d[1]); }).join(' ') + '"/>'; }
+  var DEFS = '<defs><marker id="ah-v" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10Z" fill="#6800E0"/></marker><marker id="ah-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10Z" fill="#C62828"/></marker></defs>';
+  var COLS = '<g class="colbg" data-layer="org"><rect class="band" x="10" y="10" width="540" height="1020" rx="14"/><text class="bandno" x="28" y="36">1</text><text class="bandt" x="50" y="36">ORGANISATION</text></g>' +
+    '<g class="colbg" data-layer="flow"><rect class="band" x="562" y="10" width="700" height="1020" rx="14"/><text class="bandno" x="580" y="36">2</text><text class="bandt" x="602" y="36">PROCESS WORKFLOWS</text></g>' +
+    '<g class="colbg" data-layer="tech"><rect class="band" x="1274" y="10" width="636" height="1020" rx="14"/><text class="bandno" x="1292" y="36">3</text><text class="bandt" x="1314" y="36">TOOLS, AGENTS &amp; INFRASTRUCTURE</text></g>';
+
+  function build(key, D) {
+    var bb = {}, nodes = [], decor = [];
+    function node(id, layer, name, desc, inner, box) {
+      bb[id] = box;
+      nodes.push('<g class="nd" data-id="' + id + '" data-layer="' + layer + '" data-name="' + esc(name) + '" data-desc="' + esc(desc || '') + '" tabindex="0">' + inner + '</g>');
+    }
+    function arrow(d, cls, red) { decor.push('<path class="flow' + (cls ? ' ' + cls : '') + '" d="' + d + '" marker-end="url(#' + (red ? 'ah-r' : 'ah-v') + ')"/>'); }
+
+    // 1. Organisation
+    node('root', 'org', D.root.name, D.root.desc, R('box root', 30, 52, 500, 52, 10) + T(46, 74, 'bt w', D.root.name) + T(46, 94, 'rs', D.root.sub), { x: 30, y: 52, w: 500, h: 52 });
+    var n = D.teams.length, h = (832 - 8 * (n - 1)) / n, lastMid = 0;
+    D.teams.forEach(function (t, i) {
+      var y = 122 + i * (h + 8), s = R('box ' + (t.cls || D.teamCls), 66, y, 464, h, 10) + T(78, y + 21, 'bt', t.name) + T(D.countX, y + 22, 'cnt', t.n, 'end');
+      // one dot per person; dots tighten when a large team would run past the agent pills or the box edge
+      var room = (D.countX > 400 ? 500 : 292) - 81.5, sp = t.n > 1 ? Math.min(10, room / (t.n - 1)) : 10, rad = Math.min(3.5, sp * 0.42);
+      for (var k = 0; k < t.n; k++) s += '<circle class="' + (t.dot || D.dot) + '" cx="' + r(81.5 + sp * k) + '" cy="' + r(y + 35.5) + '" r="' + r(rad) + '"/>';
+      s += T(78, y + h - 10, 'bs', t.sub);
+      node(t.id, 'org', t.name, t.desc, s, { x: 66, y: y, w: 464, h: h });
+      lastMid = y + h / 2;
+      decor.push('<path class="tree" d="M46,' + r(lastMid) + ' H66"/>');
+      (t.agents || []).forEach(function (a, k) {
+        var py = y + 26 + k * 30;
+        node(a.id, 'org', a.name + ' agent', a.desc, R('box agent', 318, py, 200, 24, 12) + hex(331, py + 12) + T(344, py + 16, 'at', a.name), { x: 318, y: py, w: 200, h: 24 });
+      });
+    });
+    decor.unshift('<path class="tree" d="M46,104 V' + r(lastMid) + '"/>');
+    node('ext', 'org', D.ext.name, D.ext.desc, R('box ext', 30, 984, 500, 36, 10) + T(280, 1007, 'bs', D.ext.name, 'middle'), { x: 30, y: 984, w: 500, h: 36 });
+
+    // 2. Workflows
+    function flowBox(id, x, y, w, h, cls, name, pill, pillBottom, lines, desc) {
+      var s = R('box ' + cls, x, y, w, h, 12) + T(x + 14, y + 25, 'wt', name);
+      if (pill) {
+        var pw = tw(pill, 12, 600) + 22, px = x + w - 12 - pw, py = pillBottom ? y + h - 30 : y + 10;
+        s += R('pill', px, py, pw, 22, 11) + T(px + pw / 2, py + 15, 'pt', pill, 'middle');
+      }
+      lines.forEach(function (l, k) { s += T(x + 14, y + 48 + 18 * k, l[1] || 'ws', l[0]); });
+      node(id, 'flow', name, desc, s, { x: x, y: y, w: w, h: h });
+    }
+    var F = D.flow;
+    if (F.type === 'seq') {
+      F.steps.forEach(function (st, i) {
+        var y = 62 + i * 148;
+        flowBox(st.id, 600, y, 380, 112, 'wfo', st.name, st.pill, false, st.lines, st.lines.map(function (l) { return l[0]; }).join('. ') + '.');
+        if (i < F.steps.length - 1) arrow('M790,' + (y + 114) + ' V' + (y + 146));
+      });
+      F.side.forEach(function (sd) {
+        var y = 62 + sd.row * 148;
+        flowBox(sd.id, 1010, y, 236, 112, 'wfo', sd.name, sd.pill, true, sd.lines, sd.lines.map(function (l) { return l[0]; }).join('. ') + '.');
+        arrow('M1008,' + (y + 56) + ' H986');
+      });
+      var last = 62 + (F.steps.length - 1) * 148;
+      arrow('M596,' + (last + 56) + ' H578 V118 H594', 'red dash', true);
+      decor.push(T(570, 420, 'fl red', F.feedback, 'middle', ' transform="rotate(-90 570 420)"'));
+      flowBox(F.data.id, 600, 830, 646, 74, 'wfo bar', F.data.name, null, false, F.data.lines, F.data.desc);
+      arrow('M790,828 V' + (last + 118), 'thin');
+      decor.push(T(800, 815, 'fl', F.dataNote));
+    } else {
+      var X = [590, 980], Y = [62, 312, 562];
+      F.boxes.forEach(function (b) {
+        flowBox(b.id, X[b.col], Y[b.row], 270, 118, 'wf', b.name, b.pill, false, b.lines.map(function (l) { return [l, 'ws']; }), b.lines.join(' '));
+      });
+      ['M725,184 V306', 'M725,434 V556', 'M864,621 H974', 'M1115,558 V436', 'M1115,308 V186', 'M976,121 H866'].forEach(function (d) { arrow(d); });
+      F.gates.forEach(function (g) {
+        decor.push('<g class="gate"><path d="M' + g[0] + ',' + (g[1] - 11) + ' L' + (g[0] + 11) + ',' + g[1] + ' L' + g[0] + ',' + (g[1] + 11) + ' L' + (g[0] - 11) + ',' + g[1] + 'Z"/>' + T(g[0] + 20, g[1] + 4, 'gt', g[2]) + '</g>');
+      });
+      F.labels.forEach(function (l) { decor.push(T(l[0], l[1], 'fl', l[2], l[3])); });
+      decor.push('<g class="loop"><circle cx="920" cy="372" r="52"/>' + T(920, 366, '', F.loop[0], 'middle') + T(920, 384, '', F.loop[1], 'middle') + '</g>');
+      F.support.forEach(function (s) { flowBox(s.id, X[s.col], 718, 270, 92, 'wfs', s.name, s.pill, true, [[s.line, 'ws']], s.line + '.'); });
+      arrow('M588,764 H574 V621 H584', 'thin');
+      arrow('M1252,764 H1262 V621 H1256', 'thin');
+      flowBox(F.data.id, 590, 834, 660, 64, 'wf bar', F.data.name, null, false, [[F.data.line, 'ws']], F.data.desc);
+      arrow('M725,832 V814', 'thin');
+      arrow('M1115,832 V814', 'thin');
+      decor.push('<g class="gate"><path d="M602,936 L613,947 L602,958 L591,947Z"/>' + T(622, 951, 'gt', 'Human approval point') + '</g>');
+      decor.push(T(590, 990, 'fl', F.note, 'start'));
+    }
+
+    // 3. Technology: layers flow left to right and wrap inside the column
+    var y = 72, bottom = 72;
+    D.tech.forEach(function (L, li) {
+      decor.push(T(1292, y, 'rl', L.label));
+      var top = y + 10, x = 1292;
+      if (L.chips) {
+        L.chips.forEach(function (c) {
+          var agent = c.kind === 'agent', w = tw(c.name, 12.5) + (agent ? 42 : 26), s;
+          if (x + w > 1892) { x = 1292; top += 42; }
+          if (agent) s = R('box chip agent', x, top, w, 34, 17) + hex(x + 16, top + 17) + T(x + 29, top + 22, 'ct', c.name);
+          else s = R('box chip ' + (c.kind || 'tool'), x, top, w, 34, 8) + T(x + 12, top + 22, 'ct', c.name);
+          node(c.id, 'tech', c.name, c.desc || (agent ? 'Agent, governed by Agent5i' : ''), s, { x: x, y: top, w: w, h: 34 });
+          x += w + 8;
+        });
+        bottom = top + 34;
+      } else if (L.empty) {
+        node(L.empty.id, 'tech', L.empty.name, L.empty.desc, R('box empty', 1292, top, 600, 40, 10) + T(1592, top + 25, 'bs red', L.empty.text, 'middle'), { x: 1292, y: top, w: 600, h: 40 });
+        bottom = top + 40;
+      } else {
+        nodes.push('<g class="nd static" data-layer="tech">' + R('box cloud', 1292, top, 600, 44, 10) + T(1592, top + 27, 'cl', L.cloud, 'middle') + '</g>');
+        bottom = top + 44;
+      }
+      if (li < D.tech.length - 1) decor.push('<line class="rowline" x1="1292" x2="1892" y1="' + r(bottom + 11) + '" y2="' + r(bottom + 11) + '"/>');
+      y = bottom + 36;
+    });
+
+    // Connectors between layers; tech-to-tech and agent-to-chip links stay hidden until traced
+    var innerSet = {};
+    D.inner.forEach(function (p) { innerSet[p[0] + '|' + p[1]] = 1; });
+    var cx = D.links.concat(D.inner).map(function (p) {
+      var A = bb[p[0]], B = bb[p[1]], d;
+      if (!A || !B) return '';
+      var inner = innerSet[p[0] + '|' + p[1]] || (A.x >= 1274 && B.x >= 1274);
+      if (B.x >= A.x + A.w - 2 || A.x >= B.x + B.w - 2) {
+        if (A.x > B.x) { var t = A; A = B; B = t; }
+        var x1 = A.x + A.w, y1 = A.y + A.h / 2, x2 = B.x, y2 = B.y + B.h / 2, mx = (x1 + x2) / 2;
+        d = 'M' + r(x1) + ',' + r(y1) + ' C' + r(mx) + ',' + r(y1) + ' ' + r(mx) + ',' + r(y2) + ' ' + r(x2) + ',' + r(y2);
+      } else {
+        if (A.y > B.y) { var u = A; A = B; B = u; }
+        var a1 = A.x + A.w / 2, b1 = A.y + A.h, a2 = B.x + B.w / 2, b2 = B.y, my = (b1 + b2) / 2;
+        d = 'M' + r(a1) + ',' + r(b1) + ' C' + r(a1) + ',' + r(my) + ' ' + r(a2) + ',' + r(my) + ' ' + r(a2) + ',' + r(b2);
+      }
+      return '<path class="cx' + (inner ? ' inner' : '') + '" data-a="' + p[0] + '" data-b="' + p[1] + '" d="' + d + '"/>';
+    }).join('');
+
+    return { svg: '<g id="' + key + '" class="state">' + COLS + decor.join('') + '<g class="cxs">' + cx + '</g>' + nodes.join('') + '</g>', dockY: bottom + 20 };
+  }
+
+  /* ---------- Interaction ---------- */
+  var svg = document.getElementById('bp'), panel = document.getElementById('panel'), stage = document.querySelector('.stage');
+  var state = 'present', layer = 'all', docks = {}, cur = null, view = 'bp', dirty = true;
+  var LAYER = { org: 'Organisation', flow: 'Workflows', tech: 'Technology' };
+  var intro = panel.innerHTML;
+
+  function render() {
+    dirty = false;
+    var p = build('present', PRESENT), t = build('transformed', TRANSFORMED);
+    docks = { present: p.dockY, transformed: t.dockY };
+    svg.innerHTML = DEFS + p.svg + t.svg + '<rect id="dock" x="1292" width="600" fill="none" pointer-events="none"/>';
+    setState(state);
+    setLayer(layer);
+  }
+  function setState(v) {
+    if (v !== 'present' && v !== 'transformed') v = 'present';
+    state = v;
+    ['present', 'transformed'].forEach(function (n) {
+      document.getElementById(n).style.display = n === v ? '' : 'none';
+      document.getElementById('k-' + n).hidden = n !== v;
+      document.getElementById('s-' + n).hidden = n !== v;
+    });
+    document.querySelectorAll('[data-v]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.v === v); });
+    if (view === 'bp' && location.hash.slice(1) !== v) history.replaceState(null, '', '#' + v);
+    var dock = document.getElementById('dock'), dy = Math.min(docks[v], 880);
+    dock.setAttribute('y', dy); dock.setAttribute('height', 1020 - dy);
+    clear(); place();
+  }
+  function setLayer(l) {
+    layer = l;
+    svg.classList.remove('layer-org', 'layer-flow', 'layer-tech');
+    if (l !== 'all') svg.classList.add('layer-' + l);
+    document.querySelectorAll('[data-l]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.l === l); });
+  }
+  function clear() {
+    cur = null;
+    svg.classList.remove('focus');
+    svg.querySelectorAll('.hot').forEach(function (e) { e.classList.remove('hot'); });
+    panel.innerHTML = intro;
+  }
+  function esc2(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+  function focusOn(g) {
+    svg.querySelectorAll('.hot').forEach(function (e) { e.classList.remove('hot'); });
+    var root = document.getElementById(state), id = g.dataset.id; if (!id) return;
+    cur = g;
+    var linked = [];
+    root.querySelectorAll('.cx').forEach(function (p) {
+      if (p.dataset.a === id || p.dataset.b === id) {
+        p.classList.add('hot');
+        var other = p.dataset.a === id ? p.dataset.b : p.dataset.a;
+        if (linked.indexOf(other) < 0) linked.push(other);
+      }
+    });
+    g.classList.add('hot');
+    var groups = {};
+    linked.forEach(function (n) {
+      var el = root.querySelector('.nd[data-id="' + n + '"]'); if (!el) return;
+      el.classList.add('hot');
+      (groups[el.dataset.layer] = groups[el.dataset.layer] || []).push(el.dataset.name);
+    });
+    svg.classList.add('focus');
+    var html = '<h2>' + esc2(g.dataset.name) + ' <span class="lab">' + LAYER[g.dataset.layer] + '</span></h2>';
+    if (g.dataset.desc) html += '<p>' + esc2(g.dataset.desc) + '</p>';
+    var items = ['org', 'flow', 'tech'].filter(function (k) { return groups[k]; }).map(function (k) { return '<li><b>' + LAYER[k] + ':</b> <span>' + groups[k].map(esc2).join(', ') + '</span></li>'; });
+    html += items.length ? '<ul>' + items.join('') + '</ul>' : '<p>No direct links.</p>';
+    panel.innerHTML = html;
+  }
+  function ndOf(t) { return t && t.closest ? t.closest('.nd:not(.static)') : null; }
+  svg.addEventListener('pointerover', function (e) { var g = ndOf(e.target); if (g && g !== cur) focusOn(g); });
+  svg.addEventListener('pointerout', function (e) { if (cur && !ndOf(e.relatedTarget)) clear(); });
+  svg.addEventListener('focusin', function (e) { var g = ndOf(e.target); if (g) focusOn(g); });
+  svg.addEventListener('focusout', function (e) { if (!ndOf(e.relatedTarget)) clear(); });
+  svg.addEventListener('click', function (e) { var g = ndOf(e.target); if (g) focusOn(g); else clear(); });
+  document.querySelectorAll('[data-v]').forEach(function (b) { b.addEventListener('click', function () { setState(b.dataset.v); }); });
+  document.querySelectorAll('[data-l]').forEach(function (b) { b.addEventListener('click', function () { setLayer(b.dataset.l); }); });
+  document.addEventListener('keydown', function (e) {
+    if (view !== 'bp' || (e.target.closest && e.target.closest('input, select, textarea'))) return;
+    if (e.key === 'ArrowLeft') setState('present');
+    else if (e.key === 'ArrowRight') setState('transformed');
+    else if (e.key.length === 1 && '1234'.indexOf(e.key) >= 0) setLayer(['all', 'org', 'flow', 'tech'][+e.key - 1]);
+  });
+  // dock the detail panel into the empty space at the foot of the technology column
+  function place() {
+    if (window.matchMedia('(max-width: 820px)').matches) { panel.removeAttribute('style'); return; }
+    var dock = document.getElementById('dock'); if (!dock) return;
+    var d = dock.getBoundingClientRect(), st = stage.getBoundingClientRect();
+    panel.style.left = (d.left - st.left) + 'px'; panel.style.top = 'auto';
+    panel.style.bottom = Math.max(0, st.bottom - d.bottom) + 'px'; panel.style.width = d.width + 'px';
+    panel.style.minHeight = d.height + 'px'; panel.style.height = 'auto'; panel.style.maxHeight = '60%';
+  }
+  window.addEventListener('resize', place);
+
+  /* ---------- Simulator: inputs → model → results and both blueprint states ---------- */
+  var PROGS = [
+    { k: 'quant', name: 'Quant', full: 'Quantitative research', color: 'var(--fg)' },
+    { k: 'ux', name: 'UX', full: 'UX research', color: 'var(--accent)' },
+    { k: 'qual', name: 'Qual', full: 'Qualitative research', color: 'var(--qual)' },
+    { k: 'tools', name: 'Tools', full: 'Tools & platforms', color: 'var(--soft)' }
+  ];
+  var BASE_SHARE = { quant: 50, ux: 25, qual: 20, tools: 5 };
+  var RAMP = [0.4, 0.8, 1];
+  var KEY = 'mr-sim-v1';
+  function defaults() {
+    return {
+      budget: 100, target: 25,
+      progs: { quant: { share: 50, change: -30 }, ux: { share: 25, change: -24 }, qual: { share: 20, change: -30 }, tools: { share: 5, change: 40 } },
+      team: 50, fte: 150, release: 40, ai: 6,
+      oneTime: 10, run: 3, realise: 80,
+      outcomes: [
+        { id: 'rev', kind: 'fin', on: true, name: 'Revenue from research-led decisions', value: 5, conf: 50 },
+        { id: 'fail', kind: 'fin', on: false, name: 'Cost avoided on failed launches', value: 3, conf: 40 },
+        { id: 'creative', kind: 'fin', on: false, name: 'Media saved by pre-testing creative', value: 2, conf: 50 },
+        { id: 'tti', kind: 'non', on: true, name: 'Time from question to insight', short: 'question to insight', unit: 'weeks', base: 15, target: 3, better: 'lower' },
+        { id: 'reuse', kind: 'non', on: true, name: 'Questions answered from past research', short: 'answered from past research', unit: '%', base: 10, target: 50, better: 'higher' },
+        { id: 'evid', kind: 'non', on: true, name: 'Major decisions backed by research', short: 'decisions backed by research', unit: '%', base: 40, target: 80, better: 'higher' },
+        { id: 'track', kind: 'non', on: true, name: 'Days between tracker readouts', short: 'between tracker readouts', unit: 'days', base: 90, target: 7, better: 'lower' },
+        { id: 'studies', kind: 'non', on: false, name: 'Studies completed a year', short: 'studies a year', unit: 'studies', base: 120, target: 180, better: 'higher' },
+        { id: 'nps', kind: 'non', on: false, name: 'Customer satisfaction (NPS change)', short: 'NPS change', unit: 'pts', base: 0, target: 5, better: 'higher' }
+      ]
+    };
+  }
+  var M = null;
+  try { M = JSON.parse(localStorage.getItem(KEY)); } catch (e) { M = null; }
+  if (!M || !M.progs || !M.outcomes) M = defaults();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(M)); } catch (e) { /* storage unavailable: inputs still work for this visit */ } }
+
+  function num(v, d) { v = parseFloat(v); return isFinite(v) ? v : d; }
+  function clamp(v, a, b) { return Math.min(b, Math.max(a, v)); }
+  function fm(x) { var a = Math.abs(x); return (x < -0.05 ? '−' : '') + '$' + (a >= 10 ? Math.round(a) : a.toFixed(1)) + 'M'; }
+  function fm1(x) { return (x < -0.05 ? '−' : '') + '$' + Math.abs(x).toFixed(1) + 'M'; }
+  function sgn(v) { v = Math.round(v); return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + '%'; }
+  function fmtO(v, unit) {
+    if (unit === '%') return v + '%';
+    if (unit === 'weeks') return v + ' wks';
+    if (unit === 'pts') return (v > 0 ? '+' : '') + v + ' pts';
+    if (unit === 'studies' || !unit) return String(v);
+    return v + ' ' + unit;
+  }
+  function ppl(n) { return n + (n === 1 ? ' person' : ' people'); }
+  // split a headcount across teams by weight, at least one person per team, largest remainder rounding
+  function allocate(total, w) {
+    var n = w.length, rest = Math.max(Math.round(total), n) - n, sw = w.reduce(function (a, b) { return a + b; }, 0);
+    var raw = w.map(function (x) { return sw > 0 ? x / sw * rest : rest / n; });
+    var out = raw.map(Math.floor), left = rest - out.reduce(function (a, b) { return a + b; }, 0);
+    raw.map(function (x, i) { return [x - Math.floor(x), i]; }).sort(function (a, b) { return b[0] - a[0]; }).slice(0, left).forEach(function (p) { out[p[1]]++; });
+    return out.map(function (x) { return x + 1; });
+  }
+
+  function compute(m) {
+    var budget = Math.max(0, num(m.budget, 0)), shareSum = 0, today = {}, trans = {}, totalT = 0;
+    PROGS.forEach(function (p) { shareSum += Math.max(0, num(m.progs[p.k].share, 0)); });
+    function shareOf(k) { return shareSum > 0 ? Math.max(0, num(m.progs[k].share, 0)) / shareSum : 0; }
+    PROGS.forEach(function (p) {
+      today[p.k] = budget * shareOf(p.k);
+      trans[p.k] = Math.max(0, today[p.k] * (1 + num(m.progs[p.k].change, 0) / 100));
+      totalT += trans[p.k];
+    });
+    var levers = budget - totalT, targetAmt = budget * clamp(num(m.target, 0), 0, 100) / 100;
+    // teams tied to a programme grow or shrink with that programme's share of the budget
+    function weights(base, keys) { return base.map(function (b, i) { return keys[i] ? b * shareOf(keys[i]) * 100 / BASE_SHARE[keys[i]] : b; }); }
+    var team = Math.max(8, Math.round(num(m.team, 50)));
+    var teamsP = allocate(team, weights([8, 12, 8, 7, 5, 5, 3, 2], [0, 'quant', 'ux', 'qual', 0, 0, 0, 0]));
+    var spec = Math.max(7, Math.round(team * (1 - clamp(num(m.release, 0), 0, 95) / 100)));
+    var teamsT = allocate(spec, weights([6, 6, 5, 5, 3, 3, 2], [0, 'quant', 'ux', 'qual', 0, 0, 0]));
+    var ai = Math.max(0, Math.round(num(m.ai, 0))), fte = Math.max(0, num(m.fte, 150)) / 1000;
+    var costP = team * fte, costT = (spec + ai) * fte, teamSave = costP - costT;
+    var real = clamp(num(m.realise, 100), 0, 100) / 100;
+    var fin = m.outcomes.filter(function (o) { return o.kind === 'fin' && o.on; }).map(function (o) {
+      var v = Math.max(0, num(o.value, 0)), c = clamp(num(o.conf, 0), 0, 100); return { name: o.name, value: v, adj: v * c / 100 };
+    });
+    var finPlan = fin.reduce(function (a, f) { return a + f.value; }, 0), finAdj = fin.reduce(function (a, f) { return a + f.adj; }, 0);
+    var run = Math.max(0, num(m.run, 0)), oneTime = Math.max(0, num(m.oneTime, 0));
+    var gross = (levers + teamSave) * real + finAdj, net = gross - run;
+    var cum = [-oneTime], c = -oneTime, payback = null;
+    for (var mo = 1; mo <= 36; mo++) { c += (gross * RAMP[Math.floor((mo - 1) / 12)] - run) / 12; cum.push(c); if (payback === null && c >= 0) payback = mo; }
+    var cost3 = oneTime + 3 * run, benefit3 = gross * (RAMP[0] + RAMP[1] + RAMP[2]);
+    return {
+      budget: budget, shareSum: shareSum, shareOf: shareOf, today: today, trans: trans, totalT: totalT, levers: levers, targetAmt: targetAmt, gap: levers - targetAmt,
+      team: team, teamsP: teamsP, spec: spec, teamsT: teamsT, ai: ai, costP: costP, costT: costT, teamSave: teamSave, real: real,
+      fin: fin, finPlan: finPlan, finAdj: finAdj, run: run, oneTime: oneTime, gross: gross, net: net, cum: cum, payback: payback,
+      cost3: cost3, roi: cost3 > 0 ? (benefit3 - cost3) / cost3 : null,
+      non: m.outcomes.filter(function (o) { return o.kind === 'non' && o.on; })
+    };
+  }
+
+  // push the model into the blueprint data before it is drawn
+  function applyModel(C) {
+    var t = C.today, x = C.trans;
+    PRESENT.root.sub = ppl(C.team) + ' · ' + fm(C.budget) + ' research spend a year';
+    PRESENT.root.desc = 'Leads a ' + C.team + '-person corporate research team; most studies are commissioned one at a time through agencies.';
+    var PD = {
+      o_bp: 'Take requests from the business and turn them into study briefs.',
+      o_quant: 'Manage ' + fm(t.quant) + ' of agency-run trackers and survey studies.',
+      o_ux: 'Run ' + fm(t.ux) + ' of usability, journey and concept studies, mostly moderated.',
+      o_qual: 'Commission ' + fm(t.qual) + ' of diary studies, mystery shopping and in-depth interviews.',
+      o_ops: 'Run RFPs, panels and recruiting; check consent study by study.',
+      o_an: 'Rebuild tables and driver models for each study.',
+      o_km: 'File reports on a shared drive; past studies are hard to find.',
+      o_lead: 'Set the research plan and budget once a year.'
+    };
+    var PS = { o_quant: 'Brand tracking, CSAT/NPS, surveys · ' + fm(t.quant), o_ux: 'Usability and journey studies · ' + fm(t.ux), o_qual: 'Diaries, mystery shops, interviews · ' + fm(t.qual) };
+    PRESENT.teams.forEach(function (tm, i) { tm.n = C.teamsP[i]; tm.desc = ppl(tm.n) + '. ' + PD[tm.id]; if (PS[tm.id]) tm.sub = PS[tm.id]; });
+    PRESENT.ext.name = 'Agencies, panels & vendors · ' + fm(t.quant + t.ux + t.qual) + ' a year';
+    TRANSFORMED.root.sub = C.spec + ' specialists · ' + C.ai + ' AI roles · 8 agents';
+    var TD = {
+      o_bp: 'Work with brand, product and CX leaders on the decision behind each question.',
+      o_quant: 'Set methods and approve every questionnaire; trackers run continuously. Programme spend ' + fm(x.quant) + ' a year.',
+      o_ux: 'Lead studies; the agent runs unmoderated tests and synthesises sessions. Programme spend ' + fm(x.ux) + ' a year.',
+      o_qual: 'Lead ethnography and sensitive topics; the agent runs AI-moderated interviews and diary prompts. Programme spend ' + fm(x.qual) + ' a year.',
+      o_ops: 'Own the panel strategy, vendor contracts and consent policy.',
+      o_an: 'Validate models, driver analysis and any use of synthetic respondents.',
+      o_lead: 'Set priorities and track the value of research.'
+    };
+    var j = 0;
+    TRANSFORMED.teams.forEach(function (tm) {
+      if (tm.id === 'o_ai') { tm.n = C.ai; tm.desc = ppl(C.ai) + '. AI, evaluation, research data and forward-deployed engineers; tools and platforms ' + fm(x.tools) + ' a year.'; }
+      else { tm.n = C.teamsT[j++]; tm.desc = ppl(tm.n) + '. ' + TD[tm.id]; }
+    });
+    TRANSFORMED.ext.name = 'Agencies & panels · ' + fm(x.quant + x.ux + x.qual) + ' programme spend';
+  }
+
+  function kpi(b, s) { return '<div class="k"><b>' + esc(b) + '</b><span>' + esc(s) + '</span></div>'; }
+  function spendBar(vals, total, released, scale, aria) {
+    var seg = PROGS.map(function (p) { return '<i style="width:' + (vals[p.k] / scale * 100).toFixed(2) + '%;background:' + p.color + '"></i>'; }).join('');
+    if (released > 0.05) seg += '<i class="rel" style="width:' + (released / scale * 100).toFixed(2) + '%"></i>';
+    var leg = PROGS.map(function (p) { return '<span><em style="background:' + p.color + '"></em>' + p.name + ' <b>' + fm(vals[p.k]) + '</b></span>'; }).join('');
+    if (released > 0.05) leg += '<span><em class="rel"></em>Released <b>' + fm(released) + '</b></span>';
+    return '<span class="lab">Spend ' + fm(total) + '</span><div class="sp-track" role="img" aria-label="' + aria + '">' + seg + '</div><span class="sp-leg">' + leg + '</span>';
+  }
+  function renderKPIs(C) {
+    document.getElementById('k-present').innerHTML = kpi(String(C.team), 'people') + kpi('~' + fm(C.costP), 'team cost / yr') + kpi('0', 'agents') +
+      C.non.map(function (o) { return kpi(fmtO(o.base, o.unit), o.short || o.name); }).join('');
+    document.getElementById('k-transformed').innerHTML = kpi(C.spec + ' + ' + C.ai, 'specialists + AI roles') + kpi('8', 'agents') + kpi('~' + fm(C.costT), 'team cost / yr') +
+      kpi(fm(C.levers + C.teamSave), 'released / yr') + kpi(C.roi === null ? 'n/a' : Math.round(C.roi * 100) + '%', '3-yr ROI') +
+      kpi(C.payback ? 'month ' + C.payback : '> 36 months', 'payback') +
+      C.non.map(function (o) { return kpi(fmtO(o.target, o.unit), o.short || o.name); }).join('');
+    var scale = Math.max(C.budget, C.totalT) || 1;
+    document.getElementById('s-present').innerHTML = spendBar(C.today, C.budget, 0, scale, 'Research spend mix today');
+    document.getElementById('s-transformed').innerHTML = spendBar(C.trans, C.totalT, C.levers, scale, 'Research spend mix in the transformed state');
+    document.getElementById('bp-note').textContent = 'Illustrative: $' + num(M.fte, 150) + 'k loaded cost per FTE. Every figure follows the Simulator inputs.';
+  }
+
+  /* inputs */
+  var inputsEl = document.getElementById('inputs'), resultsEl = document.getElementById('results');
+  function card(title, body) { return '<section class="card">' + (title ? '<h3>' + title + '</h3>' : '') + body + '</section>'; }
+  function field(label, key, unit, attrs) {
+    var id = 'in-' + key;
+    return '<div class="row"><span><label for="' + id + '">' + label + '</label></span><input class="num" type="number" id="' + id + '" data-k="' + key + '" value="' + esc(M[key]) + '" ' + attrs + '><span class="unit">' + unit + '</span></div>';
+  }
+  function outcomeHTML(o, i) {
+    var id = 'o-' + o.id, f;
+    var head = '<div class="oc-head"><input type="checkbox" id="' + id + '-on" data-o="' + i + '" data-f="on"' + (o.on ? ' checked' : '') + ' aria-label="Include ' + esc(o.name) + '">' +
+      '<input class="txt" id="' + id + '-name" data-o="' + i + '" data-f="name" value="' + esc(o.name) + '" aria-label="Outcome name">' +
+      (o.custom ? '<button type="button" class="x" data-rm="' + i + '">Remove</button>' : '') + '</div>';
+    if (o.kind === 'fin') {
+      f = '<label for="' + id + '-value">Value</label><input class="num" type="number" id="' + id + '-value" data-o="' + i + '" data-f="value" min="0" step="0.5" value="' + esc(o.value) + '"> $M / yr' +
+        '<label for="' + id + '-conf">Confidence</label><input class="num" type="number" id="' + id + '-conf" data-o="' + i + '" data-f="conf" min="0" max="100" step="5" value="' + esc(o.conf) + '"> %' +
+        '<span id="' + id + '-adj"></span>';
+    } else {
+      f = '<label for="' + id + '-base">Today</label><input class="num" type="number" id="' + id + '-base" data-o="' + i + '" data-f="base" step="any" value="' + esc(o.base) + '">' +
+        '<label for="' + id + '-target">Target</label><input class="num" type="number" id="' + id + '-target" data-o="' + i + '" data-f="target" step="any" value="' + esc(o.target) + '">' +
+        '<input class="txt" id="' + id + '-unit" data-o="' + i + '" data-f="unit" value="' + esc(o.unit || '') + '" aria-label="Unit" placeholder="unit">' +
+        '<select id="' + id + '-better" data-o="' + i + '" data-f="better" aria-label="Which direction is better"><option value="lower"' + (o.better === 'lower' ? ' selected' : '') + '>lower is better</option><option value="higher"' + (o.better !== 'lower' ? ' selected' : '') + '>higher is better</option></select>';
+    }
+    return '<div class="oc' + (o.on ? '' : ' off') + '">' + head + '<div class="oc-fields">' + f + '</div></div>';
+  }
+  function renderInputs() {
+    var progs = '<div class="prog head"><span>Programme</span><span>Share %</span><span>Spend change in transformed state</span><span></span></div>' + PROGS.map(function (p) {
+      var g = M.progs[p.k];
+      return '<div class="prog"><span><i class="sw" style="background:' + p.color + '"></i>' + p.name + '</span>' +
+        '<input class="num" type="number" id="in-' + p.k + '-share" data-p="' + p.k + '" data-f="share" min="0" max="100" step="1" value="' + esc(g.share) + '" aria-label="' + p.full + ' share of budget, %">' +
+        '<input type="range" id="in-' + p.k + '-range" data-p="' + p.k + '" data-f="change" min="-60" max="60" step="1" value="' + esc(g.change) + '" aria-label="' + p.full + ' spend change, %">' +
+        '<input class="num" type="number" id="in-' + p.k + '-change" data-p="' + p.k + '" data-f="change" min="-100" max="300" step="1" value="' + esc(g.change) + '" aria-label="' + p.full + ' spend change, %"></div>';
+    }).join('');
+    var fins = '', nons = '';
+    M.outcomes.forEach(function (o, i) { if (o.kind === 'fin') fins += outcomeHTML(o, i); else nons += outcomeHTML(o, i); });
+    inputsEl.innerHTML =
+      card('Budget and programmes', field('Total research budget', 'budget', '$M / yr', 'min="1" step="1"') + progs +
+        '<div class="row"><span class="note" id="share-sum"></span><button type="button" class="btn" id="normalise">Make shares add to 100%</button></div>' +
+        '<p class="note">Spend change is how each programme’s spend moves in the transformed state. Negative values are savings; tools usually rise as AI platforms are added.</p>') +
+      card('Savings target', field('Savings target', 'target', '% of budget', 'min="0" max="100" step="1"') + '<p class="note" id="target-amt"></p>') +
+      card('Team', field('Current team size', 'team', 'people', 'min="8" step="1"') + field('Loaded cost per FTE', 'fte', '$k / yr', 'min="0" step="5"') +
+        field('Capacity released', 'release', '% of team', 'min="0" max="95" step="1"') + field('AI roles added', 'ai', 'people', 'min="0" step="1"') +
+        '<p class="note">Team sizes follow the programme mix: a larger UX share means a larger UX team, in both states.</p>') +
+      card('Costs and risk', field('One-time transformation cost', 'oneTime', '$M', 'min="0" step="0.5"') + field('AI platform run cost', 'run', '$M / yr', 'min="0" step="0.5"') +
+        field('Savings realisation', 'realise', '%', 'min="0" max="100" step="5"') +
+        '<p class="note">Benefits ramp up to 40% in year 1, 80% in year 2 and 100% in year 3.</p>') +
+      card('Business outcomes', '<p class="subh">Financial · added to the annual benefit, discounted by confidence</p>' + fins +
+        '<p class="subh">Non-financial · shown as KPI targets on the blueprint</p>' + nons +
+        '<div class="actions" style="margin-top:8px"><button type="button" class="btn" data-add="fin">Add financial outcome</button><button type="button" class="btn" data-add="non">Add non-financial outcome</button></div>') +
+      '<div class="actions"><button type="button" class="btn" id="reset">Reset to example values</button></div>';
+  }
+  inputsEl.addEventListener('input', onInput);
+  inputsEl.addEventListener('change', onInput);
+  function onInput(e) {
+    var t = e.target, v = t.type === 'checkbox' ? t.checked : t.value;
+    if (t.dataset.k) M[t.dataset.k] = num(v, M[t.dataset.k]);
+    else if (t.dataset.p) {
+      M.progs[t.dataset.p][t.dataset.f] = num(v, M.progs[t.dataset.p][t.dataset.f]);
+      if (t.dataset.f === 'change') inputsEl.querySelectorAll('[data-p="' + t.dataset.p + '"][data-f="change"]').forEach(function (x) { if (x !== t) x.value = v; });
+    } else if (t.dataset.o) {
+      var o = M.outcomes[+t.dataset.o], f = t.dataset.f;
+      if (f === 'on') { o.on = v; t.closest('.oc').classList.toggle('off', !v); }
+      else if (f === 'name' || f === 'unit' || f === 'better') { o[f] = v; if (f === 'name') o.short = ''; }
+      else o[f] = num(v, o[f]);
+    } else return;
+    update();
+  }
+  inputsEl.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.id === 'normalise') {
+      var sum = 0; PROGS.forEach(function (p) { sum += Math.max(0, M.progs[p.k].share); });
+      if (sum <= 0) PROGS.forEach(function (p) { M.progs[p.k].share = BASE_SHARE[p.k]; });
+      else {
+        var shares = allocate(100 + PROGS.length, PROGS.map(function (p) { return Math.max(0, M.progs[p.k].share); })).map(function (x) { return x - 1; });
+        PROGS.forEach(function (p, i) { M.progs[p.k].share = shares[i]; });
+      }
+      PROGS.forEach(function (p) { document.getElementById('in-' + p.k + '-share').value = M.progs[p.k].share; });
+    } else if (b.id === 'reset') { M = defaults(); renderInputs(); }
+    else if (b.dataset.add) {
+      M.outcomes.push(b.dataset.add === 'fin' ? { id: 'c' + Date.now(), kind: 'fin', on: true, custom: true, name: 'New financial outcome', value: 1, conf: 50 }
+        : { id: 'c' + Date.now(), kind: 'non', on: true, custom: true, name: 'New outcome', unit: '%', base: 0, target: 10, better: 'higher' });
+      renderInputs();
+      var el = document.getElementById('o-' + M.outcomes[M.outcomes.length - 1].id + '-name'); if (el) { el.focus(); el.select(); }
+    } else if (b.dataset.rm) { M.outcomes.splice(+b.dataset.rm, 1); renderInputs(); }
+    else return;
+    update();
+  });
+  function updateInputNotes(C) {
+    var s = Math.round(C.shareSum * 10) / 10, ss = document.getElementById('share-sum');
+    ss.innerHTML = s === 100 ? 'Shares add up to 100%' : '<span class="warnt">Shares add up to ' + s + '%.</span> Spend is split in proportion until they add to 100%.';
+    document.getElementById('normalise').hidden = s === 100;
+    document.getElementById('target-amt').textContent = 'Target: ' + fm1(C.targetAmt) + ' a year out of ' + fm(C.budget) + '.';
+    M.outcomes.forEach(function (o) {
+      var el = document.getElementById('o-' + o.id + '-adj');
+      if (el) el.textContent = '= ' + fm1(Math.max(0, num(o.value, 0)) * clamp(num(o.conf, 0), 0, 100) / 100) + ' counted';
+    });
+  }
+
+  /* results */
+  function niceStep(x) { var p = Math.pow(10, Math.floor(Math.log10(x))), m = x / p; return (m < 1.5 ? 1 : m < 3 ? 2 : m < 7 ? 5 : 10) * p; }
+  function chart(C) {
+    var W = 640, H = 230, L = 58, Rr = 16, Tp = 16, B = 30, ys = C.cum;
+    var lo = Math.min(0, Math.min.apply(null, ys)), hi = Math.max(0, Math.max.apply(null, ys));
+    if (hi - lo < 1) hi = lo + 1;
+    var step = niceStep((hi - lo) / 4); lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
+    function X(m) { return L + (W - L - Rr) * m / 36; }
+    function Y(v) { return Tp + (H - Tp - B) * (hi - v) / (hi - lo); }
+    var s = '';
+    for (var v = lo; v <= hi + step / 1000; v += step) {
+      var vv = Math.round(v / step) * step;
+      s += '<line class="grid" x1="' + L + '" x2="' + (W - Rr) + '" y1="' + r(Y(vv)) + '" y2="' + r(Y(vv)) + '"/><text x="' + (L - 8) + '" y="' + r(Y(vv) + 4) + '" text-anchor="end">' + (vv < 0 ? '−' : '') + '$' + Math.abs(Math.round(vv * 10) / 10) + 'M</text>';
+    }
+    ['Start', 'Year 1', 'Year 2', 'Year 3'].forEach(function (lab, i) { s += '<text x="' + r(X(i * 12)) + '" y="' + (H - 8) + '" text-anchor="' + (i === 0 ? 'start' : i === 3 ? 'end' : 'middle') + '">' + lab + '</text>'; });
+    var pts = ys.map(function (y, m) { return r(X(m)) + ',' + r(Y(y)); });
+    s += '<path class="area" d="M' + r(X(0)) + ',' + r(Y(0)) + ' L' + pts.join(' L') + ' L' + r(X(36)) + ',' + r(Y(0)) + 'Z"/>';
+    s += '<line class="zero" x1="' + L + '" x2="' + (W - Rr) + '" y1="' + r(Y(0)) + '" y2="' + r(Y(0)) + '"/>';
+    s += '<path class="ln" d="M' + pts.join(' L') + '"/>';
+    if (C.payback) {
+      var px = X(C.payback), py = Y(ys[C.payback]);
+      s += '<circle class="pb" cx="' + r(px) + '" cy="' + r(py) + '" r="5"/><text class="pbt" x="' + r(px + (C.payback > 28 ? -8 : 8)) + '" y="' + r(py - 10) + '" text-anchor="' + (C.payback > 28 ? 'end' : 'start') + '">Payback, month ' + C.payback + '</text>';
+    }
+    s += '<text class="pbt" x="' + (W - Rr) + '" y="' + r(Math.max(Tp + 10, Math.min(Y(ys[36]) - 10, H - B - 6))) + '" text-anchor="end">' + fm1(ys[36]) + '</text>';
+    return '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Cumulative net cash over 36 months, from ' + fm1(ys[0]) + ' to ' + fm1(ys[36]) + (C.payback ? ', payback in month ' + C.payback : ', no payback within three years') + '">' + s + '</svg>';
+  }
+  function tile(label, v, s) { return '<div class="tile"><span class="lab">' + label + '</span><span class="v">' + v + '</span><span class="s">' + s + '</span></div>'; }
+  function renderResults(C) {
+    var met = C.gap >= -0.05;
+    var pill = met ? '<span class="pillx good">Target met' + (C.gap > 0.05 ? ', +' + fm1(C.gap) : '') + '</span>' : '<span class="pillx warn">Short by ' + fm1(-C.gap) + '</span>';
+    var html = '<div class="actions"><span class="lab">Show in blueprint</span><button type="button" class="btn solid" data-go="present">As-Is</button><button type="button" class="btn solid" data-go="transformed">Transformed</button></div>';
+    html += '<div class="tiles">' +
+      tile('Research spend', fm(C.totalT), 'from ' + fm(C.budget) + ' today') +
+      tile('Savings vs target', fm1(C.levers), 'target ' + fm1(C.targetAmt) + ' ' + pill) +
+      tile('Team', String(C.spec + C.ai), C.spec + ' specialists + ' + C.ai + ' AI roles, from ' + C.team) +
+      tile('Net annual benefit', fm1(C.net), 'risk-adjusted, after ' + fm1(C.run) + ' AI run cost') +
+      tile('3-year ROI', C.roi === null ? 'n/a' : Math.round(C.roi * 100) + '%', 'on ' + fm1(C.cost3) + ' cost over 3 years') +
+      tile('Payback', C.payback ? 'Month ' + C.payback : 'Not in 3 yrs', 'with the 40% / 80% / 100% ramp') + '</div>';
+    var mx = Math.max(C.targetAmt, C.levers, 0.001), big = PROGS.slice(0, 3).reduce(function (a, p) { return C.today[p.k] > C.today[a.k] ? p : a; });
+    function gb(lab, val, color) { return '<div class="gb"><span>' + lab + '</span><div class="track"><div class="fill" style="width:' + (Math.max(0, val) / mx * 100).toFixed(1) + '%;background:' + color + '"></div></div><b>' + fm1(val) + '</b></div>'; }
+    html += card('Savings target check', gb('Savings target', C.targetAmt, 'var(--fg)') + gb('Programme levers', C.levers, met ? 'var(--accent)' : 'var(--warn)') +
+      '<p class="note">' + pill + ' ' + (met ? 'The programme spend changes deliver ' + fm1(C.levers) + (C.gap > 0.05 ? ', ' + fm1(C.gap) + ' more than the target.' : ', in line with the target.')
+        : 'The programme spend changes fall ' + fm1(-C.gap) + ' short. Deepen the change on the largest programme (' + big.full + ', ' + fm(C.today[big.k]) + ' today) or lower the target.') + '</p>');
+    var rows = PROGS.map(function (p) {
+      return '<tr><td><i class="sw" style="background:' + p.color + '"></i>' + p.full + '</td><td class="n">' + Math.round(C.shareOf(p.k) * 100) + '%</td><td class="n">' + fm1(C.today[p.k]) + '</td><td class="n">' + sgn(num(M.progs[p.k].change, 0)) +
+        '</td><td class="n">' + fm1(C.trans[p.k]) + '</td><td class="n">' + fm1(C.today[p.k] - C.trans[p.k]) + '</td></tr>';
+    }).join('');
+    html += card('Programmes', '<div class="scroll"><table class="tbl"><tr><th>Programme</th><th class="n">Share</th><th class="n">Today</th><th class="n">Change</th><th class="n">Transformed</th><th class="n">Saving</th></tr>' + rows +
+      '<tr class="tot"><td>Total</td><td class="n">100%</td><td class="n">' + fm1(C.budget) + '</td><td class="n">' + sgn(C.budget ? -C.levers / C.budget * 100 : 0) + '</td><td class="n">' + fm1(C.totalT) + '</td><td class="n">' + fm1(C.levers) + '</td></tr></table></div>');
+    var brow = function (a, b, c) { return '<tr><td>' + a + '</td><td class="n">' + b + '</td><td class="n">' + c + '</td></tr>'; };
+    html += card('Annual benefit at full run rate', '<div class="scroll"><table class="tbl"><tr><th>Item</th><th class="n">Planned</th><th class="n">Counted</th></tr>' +
+      brow('Programme spend savings', fm1(C.levers), fm1(C.levers * C.real)) + brow('Team cost savings', fm1(C.teamSave), fm1(C.teamSave * C.real)) +
+      C.fin.map(function (f) { return brow(esc(f.name), fm1(f.value), fm1(f.adj)); }).join('') +
+      brow('AI platform run cost', fm1(-C.run), fm1(-C.run)) +
+      '<tr class="tot"><td>Net annual benefit</td><td class="n">' + fm1(C.levers + C.teamSave + C.finPlan - C.run) + '</td><td class="n">' + fm1(C.net) + '</td></tr></table></div>' +
+      '<p class="note">Savings are counted at the ' + Math.round(C.real * 100) + '% realisation rate; financial outcomes at their confidence level. One-time cost ' + fm1(C.oneTime) + ' is spent before month 1.</p>');
+    html += card('Cumulative net cash over 3 years', chart(C));
+    var orows = C.non.map(function (o) {
+      var b = num(o.base, 0), t = num(o.target, 0), better = o.better === 'lower' ? t < b : t > b, same = t === b;
+      var ch = b !== 0 ? sgn((t - b) / Math.abs(b) * 100) : ((t - b > 0 ? '+' : t - b < 0 ? '−' : '') + Math.abs(t - b));
+      return '<tr><td>' + esc(o.name) + '</td><td class="n">' + esc(fmtO(b, o.unit)) + '</td><td class="n">' + esc(fmtO(t, o.unit)) + '</td><td class="n">' + ch + '</td><td>' +
+        (same ? '<span class="pillx warn">No change</span>' : better ? '<span class="pillx good">Improves</span>' : '<span class="pillx bad">Gets worse</span>') + '</td></tr>';
+    }).join('');
+    html += card('Non-financial outcome targets', orows ? '<div class="scroll"><table class="tbl"><tr><th>Outcome</th><th class="n">Today</th><th class="n">Target</th><th class="n">Change</th><th>Status</th></tr>' + orows + '</table></div>'
+      : '<p class="note">No non-financial outcomes selected. Tick one in Business outcomes to show it here and on the blueprint.</p>');
+    resultsEl.innerHTML = html;
+  }
+  resultsEl.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-go]'); if (!b) return;
+    state = b.dataset.go; setView('bp');
+  });
+
+  function update() {
+    var C = compute(M);
+    updateInputNotes(C);
+    renderResults(C);
+    renderKPIs(C);
+    applyModel(C);
+    dirty = true;
+    if (view === 'bp') render();
+    save();
+  }
+
+  /* views: Blueprint (Present / Transformed) and Simulator, each with its own hash */
+  function setView(v) {
+    view = v;
+    document.getElementById('view-bp').hidden = v !== 'bp';
+    document.getElementById('view-sim').hidden = v !== 'sim';
+    document.getElementById('bp-ctl').hidden = v !== 'bp';
+    document.getElementById('sim-hint').hidden = v !== 'sim';
+    document.querySelectorAll('[data-t]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.t === v); });
+    if (v === 'bp') { if (dirty) render(); else setState(state); }
+    else if (location.hash !== '#simulator') history.replaceState(null, '', '#simulator');
+  }
+  document.querySelectorAll('[data-t]').forEach(function (b) { b.addEventListener('click', function () { setView(b.dataset.t); }); });
+  function route() {
+    var h = location.hash.slice(1);
+    if (h === 'simulator') setView('sim');
+    else { state = h === 'transformed' ? 'transformed' : 'present'; setView('bp'); }
+  }
+  window.addEventListener('hashchange', route);
+  renderInputs();
+  view = location.hash.slice(1) === 'simulator' ? 'sim' : 'bp';
+  update();
+  route();
+  // chip widths are measured with the web font; redraw once it has loaded
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { dirty = true; if (view === 'bp') render(); });
+})();
+</script>
+</body>
+</html>
